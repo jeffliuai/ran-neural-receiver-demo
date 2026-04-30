@@ -505,20 +505,25 @@ elements.modeToggle.addEventListener('change', (e) => {
 
 // Visitor Counter Logic
 async function initVisitorCount() {
+    console.log('Initializing visitor counter...');
     const visitorSpan = document.getElementById('visitor-count');
+    if (!visitorSpan) return;
+
     try {
-        // Use CountAPI to increment and get visit count
-        // Note: Using a unique namespace for this project
+        // Use a more robust hits service if CountAPI is flaky
         const response = await fetch('https://api.countapi.xyz/hit/ran-neural-receiver-demo/visits');
         const data = await response.json();
+        
         if (data && data.value) {
+            console.log('Visitor count updated:', data.value);
             visitorSpan.textContent = `Access Log: ${data.value.toLocaleString()} Units`;
         } else {
-            throw new Error('Invalid data');
+            throw new Error('No data from API');
         }
     } catch (err) {
-        console.warn('Counter API offline, using fallback.');
-        visitorSpan.textContent = 'System Status: Online';
+        console.error('Visitor counter error:', err);
+        // Fallback text that still looks like part of the system
+        visitorSpan.textContent = 'System Status: Active';
     }
 }
 
