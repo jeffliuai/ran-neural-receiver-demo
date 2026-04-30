@@ -2,6 +2,9 @@ let QAM_MODE = 16;
 let NUM_SECTORS = 16;
 let TARGET_SYMBOL = 6;
 let GRID_SCALE = 30;
+let BASE_NOISE = 12;
+let K_AM = 0.00003; // Distortion strength
+let K_PM = 0.000015; // Rotation strength
 
 // DOM Elements
 const elements = {
@@ -49,12 +52,11 @@ function applyPADistortion(x, y) {
     // 使用有理函數模型 r / (1 + k_am * r^2) 確保在我們的大範圍半徑 (r<180) 內保持單調遞增，
     // 不會因為三次方的過度削頂而讓外圍機率雲產生反轉或消失的 Bug。
     // k_am = 0.00003 剛好會把最外圍的點 (r=127) 擠壓到 x,y 接近 60 的邊界上，導致傳統模型極易誤判！
-    const k_am = 0.00003;
-    const r_dist = r / (1 + k_am * r * r); 
+    // AM-AM Compression
+    const r_dist = r / (1 + K_AM * r * r); 
     
     // AM-PM Phase Rotation
-    const k_pm = 0.000015;
-    const theta_dist = theta + k_pm * r * r;
+    const theta_dist = theta + K_PM * r * r;
     
     return {
         x: r_dist * Math.cos(theta_dist),
@@ -89,19 +91,17 @@ function removePADistortion(x, y) {
     
     if (r_dist === 0) return {x: 0, y: 0};
 
-    const k_am = 0.00003;
-    const discriminant = 1 - 4 * k_am * r_dist * r_dist;
+    const discriminant = 1 - 4 * K_AM * r_dist * r_dist;
     
     let r = 0;
     if (discriminant < 0) {
         // If noise pushes the point beyond the mathematically invertible domain, cap it
-        r = 1 / Math.sqrt(k_am);
+        r = 1 / Math.sqrt(K_AM);
     } else {
-        r = (1 - Math.sqrt(discriminant)) / (2 * k_am * r_dist);
+        r = (1 - Math.sqrt(discriminant)) / (2 * K_AM * r_dist);
     }
     
-    const k_pm = 0.000015;
-    const theta = theta_dist - k_pm * r * r;
+    const theta = theta_dist - K_PM * r * r;
     
     return {
         x: r * Math.cos(theta),
@@ -109,12 +109,20 @@ function removePADistortion(x, y) {
     };
 }
 
-// Neural decision based on learned inverse distortion (Perfect alignment with visual pink grid)
 function neuralDecode(x, y) {
     // The Neural Receiver equalizes the signal by mapping it back through the learned inverse distortion
     const equalized = removePADistortion(x, y);
+    
+    // Simulating Neural Network imperfection (residual error)
+    // Even the best AI has a tiny bit of "model mismatch" or estimation noise.
+    // We scale this error by the radius to show that corners are harder even for AI.
+    const r = Math.sqrt(equalized.x**2 + equalized.y**2);
+    const residualMagnitude = GRID_SCALE * 0.30 * (r / 150); // Up to 30% of grid size at edges
+    const residualX = (Math.random() - 0.5) * residualMagnitude;
+    const residualY = (Math.random() - 0.5) * residualMagnitude;
+    
     // Then it evaluates it against the perfect traditional grid
-    return traditionalDecode(equalized.x, equalized.y);
+    return traditionalDecode(equalized.x + residualX, equalized.y + residualY);
 }
 
 // Initialization
@@ -171,13 +179,15 @@ function drawBoard() {
         elements.idealPoints.appendChild(dot);
 
         // Label
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        // Place label slightly above the dot
-        text.setAttribute("x", pos.x);
-        text.setAttribute("y", pos.y - 12);
-        text.setAttribute("class", `sector-label ${i === TARGET_SYMBOL ? 'target-label' : ''}`);
-        text.textContent = i;
-        elements.labels.appendChild(text);
+        if (NUM_SECTORS <= 64 || i === TARGET_SYMBOL) {
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", pos.x);
+            text.setAttribute("y", pos.y - (NUM_SECTORS > 64 ? 8 : 12));
+            text.setAttribute("class", `sector-label ${i === TARGET_SYMBOL ? 'target-label' : ''}`);
+            if (NUM_SECTORS > 64) text.setAttribute("style", "font-size: 6px;");
+            text.textContent = i;
+            elements.labels.appendChild(text);
+        }
     }
 
     // 2. Draw Traditional Boundaries (Straight grid lines)
@@ -242,8 +252,11 @@ function drawDistributions() {
     
     const colors = ['#66fcf1', '#ff007f', '#b026ff', '#8892b0']; // Cyan, Pink, Purple, Soft Blue
 
-    // Draw learned expected signal areas (Probability Clouds) for all 16 symbols
+    // Draw learned expected signal areas (Probability Clouds)
+    // For 256-QAM, we only draw a subset + target to avoid performance lag
     for (let i = 1; i <= NUM_SECTORS; i++) {
+        if (NUM_SECTORS > 64 && i % 4 !== 0 && i !== TARGET_SYMBOL) continue;
+        
         const ideal = getIdealSVGPos(i);
         const distCenter = applyPADistortion(ideal.x, ideal.y);
         
@@ -306,8 +319,8 @@ function simulateDartThrow() {
     const distortedTx = applyPADistortion(ideal.x, ideal.y);
 
     // Add Channel Noise (AWGN)
-    // Scale noise based on QAM mode so 64-QAM doesn't become pure chaos visually
-    const noiseSpread = QAM_MODE === 16 ? 60 : 15;
+    // Scale noise based on GRID_SCALE so it's always visually meaningful
+    const noiseSpread = GRID_SCALE * 1.5; 
     const noiseX = (Math.random() - 0.5) * noiseSpread;
     const noiseY = (Math.random() - 0.5) * noiseSpread;
 
@@ -420,13 +433,29 @@ document.querySelectorAll('input[name="qam-mode"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
         QAM_MODE = parseInt(e.target.value);
         NUM_SECTORS = QAM_MODE;
-        GRID_SCALE = QAM_MODE === 16 ? 30 : 15;
-        TARGET_SYMBOL = QAM_MODE === 16 ? 6 : 28;
         
-        if (QAM_MODE === 64) {
-            elements.txGrid.classList.add('qam-64');
-        } else {
-            elements.txGrid.classList.remove('qam-64');
+        // Adaptive Scaling & Distortion
+        if (QAM_MODE === 16) {
+            GRID_SCALE = 30;
+            TARGET_SYMBOL = 6;
+            BASE_NOISE = 12;
+            K_AM = 0.00003;
+            K_PM = 0.000015;
+            elements.txGrid.className = 'tx-grid';
+        } else if (QAM_MODE === 64) {
+            GRID_SCALE = 15;
+            TARGET_SYMBOL = 28;
+            BASE_NOISE = 6;
+            K_AM = 0.00002; // Slightly more linear for higher order
+            K_PM = 0.00001;
+            elements.txGrid.className = 'tx-grid qam-64';
+        } else if (QAM_MODE === 256) {
+            GRID_SCALE = 7.5;
+            TARGET_SYMBOL = 120;
+            BASE_NOISE = 3.5; // More noise for 256
+            K_AM = 0.00001; // Stronger distortion
+            K_PM = 0.000005;
+            elements.txGrid.className = 'tx-grid qam-256';
         }
         
         document.getElementById('qam-title').textContent = `${QAM_MODE}-QAM Receiver`;

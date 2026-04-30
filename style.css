@@ -37,6 +37,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 2rem;
+    position: relative;
 }
 
 .header {
@@ -156,6 +157,11 @@ body {
     gap: 4px;
 }
 
+.tx-grid.qam-256 {
+    grid-template-columns: repeat(16, 1fr);
+    gap: 2px;
+}
+
 .tx-btn {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -175,6 +181,12 @@ body {
     border-radius: 4px;
 }
 
+.tx-grid.qam-256 .tx-btn {
+    padding: 0.2rem 0;
+    font-size: 0.55rem;
+    border-radius: 2px;
+}
+
 .tx-btn:hover {
     background: rgba(102, 252, 241, 0.2);
     border-color: var(--neon-cyan);
@@ -192,21 +204,29 @@ body {
 .guide-link {
     color: var(--neon-cyan);
     text-decoration: none;
-    font-size: 0.85rem;
-    padding: 2px 8px;
-    border: 1px solid rgba(102, 252, 241, 0.3);
-    border-radius: 4px;
-    transition: all 0.2s;
-    font-weight: 600;
+    font-size: 1rem;
+    padding: 8px 16px;
+    border: 1px solid var(--neon-cyan);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 700;
     font-family: 'Outfit', sans-serif;
-    background: rgba(0,0,0,0.2);
+    background: rgba(102, 252, 241, 0.1);
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.2);
+}
+
+.top-left-guide {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
 }
 
 .guide-link:hover {
-    background: rgba(102, 252, 241, 0.1);
-    border-color: var(--neon-cyan);
-    box-shadow: 0 0 8px rgba(102, 252, 241, 0.2);
-    color: #fff;
+    background: var(--neon-cyan);
+    color: #000;
+    box-shadow: 0 0 20px rgba(102, 252, 241, 0.6);
+    transform: translateY(-2px);
 }
 
 .action-buttons {
