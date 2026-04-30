@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAN DU-low: Neural Receiver 使用說明</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;700&display=swap');
+        
+        :root {
+            --primary: #007bff;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --error: #dc3545;
+            --text: #333;
+            --bg: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 40px;
+            background: #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        @media print {
+            body {
+                box-shadow: none;
+                margin: 0;
+                padding: 20px;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+
+        header {
+            border-bottom: 3px solid var(--primary);
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            font-size: 24px;
+            color: #000;
+        }
+
+        .version {
+            font-size: 14px;
+            color: var(--secondary);
+        }
+
+        h2 {
+            font-size: 20px;
+            border-left: 5px solid var(--primary);
+            padding-left: 10px;
+            margin-top: 30px;
+        }
+
+        h3 {
+            font-size: 17px;
+            color: var(--primary);
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f1f3f5;
+            font-weight: 600;
+        }
+
+        .tip-box {
+            background-color: #e7f3ff;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .script-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+        }
+
+        .script-title {
+            font-weight: 700;
+            color: #495057;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .highlight-text {
+            color: #d63384;
+            font-weight: 600;
+        }
+
+        .btn-print {
+            background: var(--primary);
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn-print:hover {
+            background: #0056b3;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--secondary);
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: right; margin-bottom: 20px;">
+        <button class="btn-print" onclick="window.print()">🖨️ 轉存為 PDF / 列印</button>
+    </div>
+
+    <header>
+        <div>
+            <h1>📡 RAN DU-low：Neural Receiver 互動展示</h1>
+            <div style="font-weight: 600; color: var(--primary);">技術說明與使用指南</div>
+        </div>
+        <div class="version">Version 1.0 | 2026-04</div>
+    </header>
+
+    <p>這個網頁透過互動方式展示：為什麼 5G/6G 基地台的 <strong>AI 接收器 (Neural Receiver)</strong>，比傳統數學模型更能抵抗硬體損傷與環境雜訊。不需要任何技術背景，透過簡單的操作即可直觀理解 AI-RAN 的技術優勢。</p>
+
+    <h2>第一步：選擇傳送模式 (Modulation)</h2>
+    <p>畫面左上角可以切換傳輸模式，這決定了資料傳輸的密集度：</p>
+    <table>
+        <thead>
+            <tr>
+                <th>模式</th>
+                <th>特徵</th>
+                <th>技術背景</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>16-QAM</strong></td>
+                <td>構造簡單，穩定性高</td>
+                <td>訊號間距大，解碼門檻較低。</td>
+            </tr>
+            <tr>
+                <td><strong>64-QAM</strong></td>
+                <td>傳輸更多資料，速度快</td>
+                <td>訊號極密集，對硬體與環境的要求極高。</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="tip-box">
+        <strong>▎ 建議：</strong> 初次體驗建議先從 16-QAM 開始，觀察基礎的失真現象。
+    </div>
+
+    <h2>第二步：選擇目標符號 (Target Symbol)</h2>
+    <p>點擊左側數字按鈕（1–16 或 1–64），模擬從發射端送出的「理想訊號」。右側星座圖會亮起灰色點標記目標位置。</p>
+    <p><strong>觀察重點：</strong> 試著選取「角落的符號」（如 16 或 64）與「中間的符號」（如 6 或 10）。角落訊號受硬體非線性壓縮的影響最為顯著。</p>
+
+    <h2>第三步：選擇接收模式（關鍵功能！）</h2>
+    <p>左下方切換開關決定了基地台的處理邏輯：</p>
+    <ul>
+        <li><strong>Traditional Model (傳統模式)</strong>：使用標準的直線方格。一旦訊號因硬體失真而偏離格子，傳統模型就會產生判定錯誤。</li>
+        <li><span class="highlight-text">Neural Receiver (AI 模式)</span>：啟動神經網路等化器。網格會變形為粉紅色曲線，這代表 AI 主動學習並適應了硬體的扭曲規律，重新定義了判定空間。</li>
+    </ul>
+
+    <h2>第四步：發射訊號與數據統計</h2>
+    <div class="script-card">
+        <span class="script-title">🎯 單發測試</span>
+        送出單次訊號，觀察即時判決結果與文字解析。
+    </div>
+    <div class="script-card">
+        <span class="script-title">🚀 連發 10 次看正確率</span>
+        自動執行 10 次隨機發射，並統計兩者性能差距。在極端失真下，AI 往往能展現絕對優勢。
+    </div>
+
+    <h2>🎓 推薦體驗劇本</h2>
+    
+    <h3>劇本 A：感受角落符號的差距</h3>
+    <ol>
+        <li>選擇 <strong>16-QAM</strong>。</li>
+        <li>點擊 <strong>16 號</strong>（最角落）。</li>
+        <li>先以傳統模式執行 10 連發，紀錄其偏低的正確率。</li>
+        <li>切換至 <strong>Neural Receiver</strong> 再執行一次。觀察 AI 如何在同樣的硬體條件下「救回」原本會出錯的訊號。</li>
+    </ol>
+
+    <h3>劇本 B：64-QAM 的物理極限測試</h3>
+    <ol>
+        <li>切換至 <strong>64-QAM</strong> 並選取角落符號。</li>
+        <li>觀察傳統模式下趨近於 0% 的正確率（此時已超出傳統數學模型的處理範疇）。</li>
+        <li>切換至 <strong>Neural Receiver</strong>，見證 AI 如何打破物理限制。</li>
+    </ol>
+
+    <div class="tip-box">
+        <strong>▎ 核心價值：</strong> 傳統基站為了維持「線性度」必須消耗大量電力（Power Back-off）。AI-RAN 的思維是：容忍硬體產生失真（省電），再交由 AI 完美補償。
+    </div>
+
+    <div class="footer">
+        © 2026 AI-RAN Constellation Simulation | 技術展示用文件
+    </div>
+
+    <script>
+        // Optional: Auto-open print dialog if query param is set
+        if (window.location.search.includes('print=true')) {
+            window.print();
+        }
+    </script>
+</body>
+</html>
