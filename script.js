@@ -503,6 +503,26 @@ elements.modeToggle.addEventListener('change', (e) => {
     }
 });
 
+// Visitor Counter Logic
+async function initVisitorCount() {
+    const visitorSpan = document.getElementById('visitor-count');
+    try {
+        // Use CountAPI to increment and get visit count
+        // Note: Using a unique namespace for this project
+        const response = await fetch('https://api.countapi.xyz/hit/ran-neural-receiver-demo/visits');
+        const data = await response.json();
+        if (data && data.value) {
+            visitorSpan.textContent = `Access Log: ${data.value.toLocaleString()} Units`;
+        } else {
+            throw new Error('Invalid data');
+        }
+    } catch (err) {
+        console.warn('Counter API offline, using fallback.');
+        visitorSpan.textContent = 'System Status: Online';
+    }
+}
+
 // Start
 initUI();
 drawBoard();
+initVisitorCount();

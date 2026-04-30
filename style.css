@@ -139,6 +139,25 @@ body {
     font-size: 0.95rem;
 }
 
+.footer {
+    text-align: center;
+    padding: 2rem 0;
+    color: #8892b0;
+    font-size: 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.visitor-count {
+    color: var(--neon-cyan);
+    font-family: 'Courier New', Courier, monospace;
+    background: rgba(102, 252, 241, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
 .qam-selection input[type="radio"] {
     accent-color: var(--neon-cyan);
     transform: scale(1.2);
